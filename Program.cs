@@ -38,7 +38,7 @@ namespace TaskManagement
       options.UseSqlServer(builder.Configuration.GetConnectionString("cs")));
            
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddScoped<IUserService, UserService>();
+         
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITaskService, TaskService>();
             builder.Services.AddScoped<ITaskHistoryService, TaskHistoryService>();
@@ -51,6 +51,13 @@ namespace TaskManagement
                 //options.Password.RequireUppercase = false;
             })
     .AddEntityFrameworkStores<AppDbContext>();
+            builder.Services.AddCors(corsOptions =>
+            {
+                corsOptions.AddPolicy("MyPolicy", corsOptionsBuilder =>
+                {
+                    corsOptionsBuilder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                });
+            });
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -66,8 +73,9 @@ namespace TaskManagement
         ValidateIssuer = true,
         ValidIssuer = builder.Configuration["JWT:Issuer"],
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["JWT:Audiance"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:SecretKey"]))
+        ValidAudiences = builder.Configuration.GetSection("JWT:Audiances").Get<List<string>>(),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:SecretKey"])),
+        ValidateLifetime = true,
     };
 });
 
@@ -84,8 +92,10 @@ namespace TaskManagement
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+            app.UseStaticFiles();
 
             app.UseHttpsRedirection();
+            app.UseCors("MyPolicy");
             app.UseAuthentication();
 
             app.UseAuthorization();
@@ -97,3 +107,4 @@ namespace TaskManagement
         }
     }
 }
+
