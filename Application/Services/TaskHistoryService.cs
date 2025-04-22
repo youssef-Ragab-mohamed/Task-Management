@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using TaskManagement.Application.Interfaces;
 using TaskManagement.Models;
@@ -13,11 +13,25 @@ namespace TaskManagement.Application.Services
         }
 
         public IUnitOfWork UnitOfWork { get; }
+
         //very important method
+
         public async Task<List<TaskHistory>> GetTaskHistoryByTaskIdAsync(int taskId)
         {
-            return  await UnitOfWork.TaskHistories.GetAllAsync(th=>th.TaskId==taskId , th =>th.Task );
+      
+            var taskHistoriesList = await UnitOfWork.TaskHistories.GetAllAsync(th => th.Task,th => th.User); 
+
+                taskHistoriesList = taskHistoriesList
+                .Where(th => th.TaskId == taskId)
+                .ToList();
+  
+            if (taskHistoriesList == null)
+                return new List<TaskHistory>();
+            return taskHistoriesList;
+
         }
+
+
 
         public async Task AddTaskHistoryAsync(TaskHistory history)
         {
@@ -63,6 +77,7 @@ namespace TaskManagement.Application.Services
             await UnitOfWork.CompleteAsync();
         }
 
-     
+
     }
 }
+
